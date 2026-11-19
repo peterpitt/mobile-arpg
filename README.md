@@ -72,17 +72,17 @@ Test results, the APK, and the Xcode project are uploaded as Actions artifacts. 
 
 Add these under **Settings → Secrets and variables → Actions**. The workflow only references the names below. Do not commit license files, passwords, or serials.
 
-Use **one** of the two license sets.
+`unity-builder@v4` (the Android APK and iOS Xcode jobs) exits before the editor starts unless `UNITY_LICENSE` or `UNITY_SERIAL` is set. Email and password alone are not enough for those two jobs. The test-runner image accepts any one of the sets below.
 
-**Unity Personal** (a `.ulf` license file):
+Use **one** of these sets. Leave the other names unset.
+
+**Any seat, pre-activated `.ulf` file** (works for every job in this workflow):
 
 | Secret | Value |
 | --- | --- |
 | `UNITY_LICENSE` | Full text of the Unity license file (`.ulf`) |
-| `UNITY_EMAIL` | Unity account email |
-| `UNITY_PASSWORD` | Unity account password |
 
-**Unity Pro, Plus, or Enterprise** (serial activation):
+**Unity Pro or Plus** (serial activation; also works for every job):
 
 | Secret | Value |
 | --- | --- |
@@ -90,11 +90,15 @@ Use **one** of the two license sets.
 | `UNITY_PASSWORD` | Unity account password |
 | `UNITY_SERIAL` | Unity serial key |
 
+**Unity Personal, tests only:** `UNITY_EMAIL` and `UNITY_PASSWORD` are enough for the test-runner container, and they are **not** enough for the Android and iOS builds. A Personal seat that must build the APK and the Xcode project needs a `.ulf` in `UNITY_LICENSE` as well.
+
 GameCI recommends a password made of letters and numbers only. Passwords with special characters have failed activation.
 
-How to produce `UNITY_LICENSE`: follow [GameCI activation](https://game.ci/docs/github/activation/). Run the activation workflow once, download the license artifact, and paste the `.ulf` contents into the `UNITY_LICENSE` secret. The workflow in this repo passes all four names. Leave the secrets you are not using unset; empty values are ignored when the other set is present.
+How to produce `UNITY_LICENSE`: follow [GameCI activation](https://game.ci/docs/github/activation/). Run the activation workflow once, download the license artifact, and paste the `.ulf` contents into the `UNITY_LICENSE` secret.
 
 `GITHUB_TOKEN` is provided by Actions. It is not a secret you add.
+
+The first Actions run on this branch ([run 44568431118](https://github.com/peterpitt/mobile-arpg/actions/runs/44568431118)) failed in all four jobs before Unity imported the project. Android and iOS stopped with `Missing Unity License File and no Serial was found.` Edit Mode and Play Mode pulled `unityci/editor:ubuntu-6000.3.28f1-linux-il2cpp-3`, then exited with `License activation strategy could not be determined.` Checkout succeeded. No project compile or test result exists yet.
 
 ## Local verification
 
@@ -106,4 +110,4 @@ What blocked a local run:
 - No `UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD`, or `UNITY_SERIAL` is available.
 - No Unity `.ulf` license file is on disk.
 
-Unity exits in batch mode without a license, before it imports the project or runs tests. After the secrets above are added, the GitHub Actions workflow is what verifies Edit Mode tests, Play Mode tests, the Android APK, and the iOS Xcode project.
+Unity exits in batch mode without a license, before it imports the project or runs tests. GitHub Actions reached the same gate: the editor image for `6000.3.28f1` downloaded, and every job stopped on the missing license. After the secrets above are added, re-run `.github/workflows/unity-ci.yml` to verify Edit Mode tests, Play Mode tests, the Android APK, and the iOS Xcode project.
